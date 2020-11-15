@@ -3,14 +3,22 @@ drop function if exists `automotriz`.`verificarSiEstaTerminadoElVehiculo`;
 
 delimiter $$
 CREATE procedure promedioConstruccionVehiculosXLinea(in id_linea_de_montaje_input int)
-begin
+begin 
 
-    select avg(timestampdiff(MINUTE,vxe.fecha_hora_entrada,fecha_hora_salida)) as `promedio_construccion_vehiculos(minutos)` from estaciones_x_linea exl 
+declare cantidad_autos int;
+
+set cantidad_autos = (select count(vxe.id_vehiculo) from vehiculo_x_estacion vxe
+	inner join estacion on estacion.codigo = vxe.id_estacion
+    inner join estaciones_x_linea on estaciones_x_linea.id_estacion = vxe.id_estacion
+    where estacion.orden = 5 and fecha_hora_salida is not null and estaciones_x_linea.id_linea_de_montaje = id_linea_de_montaje_input);
+    
+select sum(timestampdiff(SECOND,vxe.fecha_hora_entrada,fecha_hora_salida)/60) / cantidad_autos as `promedio_construccion_vehiculos(minutos)` from estaciones_x_linea exl 
 	inner join estacion on estacion.codigo = exl.id_estacion
 	inner join vehiculo_x_estacion vxe on vxe.id_estacion = estacion.codigo
 	where exl.id_linea_de_montaje = id_linea_de_montaje_input and verificarSiEstaTerminadoElVehiculo(vxe.id_vehiculo) = true order by vxe.id_vehiculo,vxe.id_estacion; 
-	
+
 END $$
+
 delimiter ;
 
 delimiter $$
@@ -30,5 +38,4 @@ begin
 END $$
 delimiter ;
 
-call promedioConstruccionVehiculosXLinea(2);
-
+call promedioConstruccionVehiculosXLinea(5);
